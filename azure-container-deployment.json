@@ -1,0 +1,97 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "containerGroupName": {
+            "type": "string",
+            "defaultValue": "pysample-01a-desktop",
+            "metadata": {
+                "description": "Name for the container group"
+            }
+        },
+        "location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]",
+            "metadata": {
+                "description": "Location for all resources"
+            }
+        },
+        "googleCredentialsJson": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Google Sheets API credentials JSON content"
+            }
+        },
+        "spreadsheetKey": {
+            "type": "string",
+            "defaultValue": "17Le1KA9nzMREt0Qp9_elM1OF1q8aSp-GDBZRPOntNI8",
+            "metadata": {
+                "description": "Google Sheets spreadsheet key"
+            }
+        }
+    },
+    "variables": {
+        "containerImage": "your-registry/pysample-01a-windows:latest"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.ContainerInstance/containerGroups",
+            "apiVersion": "2021-09-01",
+            "name": "[parameters('containerGroupName')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "containers": [
+                    {
+                        "name": "pysample-01a-desktop",
+                        "properties": {
+                            "image": "[variables('containerImage')]",
+                            "resources": {
+                                "requests": {
+                                    "cpu": 2,
+                                    "memoryInGb": 4
+                                }
+                            },
+                            "ports": [
+                                {
+                                    "port": 3389,
+                                    "protocol": "TCP"
+                                }
+                            ],
+                            "environmentVariables": [
+                                {
+                                    "name": "GOOGLE_CREDENTIALS_JSON",
+                                    "secureValue": "[parameters('googleCredentialsJson')]"
+                                },
+                                {
+                                    "name": "SPREADSHEET_KEY",
+                                    "value": "[parameters('spreadsheetKey')]"
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "osType": "Windows",
+                "ipAddress": {
+                    "type": "Public",
+                    "ports": [
+                        {
+                            "port": 3389,
+                            "protocol": "TCP"
+                        }
+                    ]
+                },
+                "restartPolicy": "Always"
+            }
+        }
+    ],
+    "outputs": {
+        "containerIPv4Address": {
+            "type": "string",
+            "value": "[reference(resourceId('Microsoft.ContainerInstance/containerGroups', parameters('containerGroupName'))).ipAddress.ip]"
+        },
+        "rdpConnectionString": {
+            "type": "string",
+            "value": "[concat('mstsc /v:', reference(resourceId('Microsoft.ContainerInstance/containerGroups', parameters('containerGroupName'))).ipAddress.ip, ':3389')]"
+        }
+    }
+}

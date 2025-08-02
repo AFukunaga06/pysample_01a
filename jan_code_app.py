@@ -13,7 +13,23 @@ from PIL import Image
 # Google Sheets APIの認証情報を設定
 try:
     scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-    credentials_path = os.getenv('GOOGLE_CREDENTIALS_PATH', 'C:/pysample_01/samplep20240906-5ae36c9a4acd.json')
+    
+    credentials_json = os.getenv('GOOGLE_CREDENTIALS_JSON')
+    if credentials_json:
+        import json
+        import tempfile
+        temp_dir = tempfile.gettempdir()
+        credentials_path = os.path.join(temp_dir, 'google_credentials.json')
+        with open(credentials_path, 'w') as f:
+            if isinstance(credentials_json, str):
+                f.write(credentials_json)
+            else:
+                json.dump(credentials_json, f)
+        print(f"Using credentials from environment variable: {credentials_path}")
+    else:
+        credentials_path = os.getenv('GOOGLE_CREDENTIALS_PATH', 'C:/pysample_01/samplep20240906-5ae36c9a4acd.json')
+        print(f"Using credentials from file: {credentials_path}")
+    
     credentials = ServiceAccountCredentials.from_json_keyfile_name(credentials_path, scope)
     client = gspread.authorize(credentials)
     spreadsheet_key = os.getenv('SPREADSHEET_KEY', '17Le1KA9nzMREt0Qp9_elM1OF1q8aSp-GDBZRPOntNI8')
@@ -368,6 +384,10 @@ class CombinedApp(ctk.CTk):
         self.extract_start_pos = None
         self.extract_end_pos = None
 
-if __name__ == '__main__':
+def main():
+    """Main function to run the application"""
     app = CombinedApp()
     app.mainloop()
+
+if __name__ == '__main__':
+    main()

@@ -1,0 +1,101 @@
+# Dockerfile for Windows Container with GUI support for CustomTkinter application
+# escape=`
+
+FROM mcr.microsoft.com/windows/servercore:ltsc2022
+
+# Set shell to PowerShell
+SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
+
+# Install Chocolatey package manager
+RUN Set-ExecutionPolicy Bypass -Scope Process -Force; `
+    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; `
+    iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+
+# Install Python 3.11
+RUN choco install python311 -y --no-progress
+
+# Refresh environment variables
+RUN refreshenv
+
+# Set Python path
+ENV PATH="C:\Python311;C:\Python311\Scripts;${PATH}"
+
+# Install Visual C++ Redistributable (required for some Python packages)
+RUN choco install vcredist2019 -y --no-progress
+
+# Create application directory
+WORKDIR C:\app
+
+# Copy requirements file
+COPY requirements.txt .
+
+# Install Python dependencies
+RUN python -m pip install --upgrade pip && `
+    python -m pip install --no-cache-dir -r requirements.txt
+
+# Copy application files
+COPY jan_code_app.py .
+COPY *.py .
+COPY *.txt .
+
+# Create startup script
+RUN echo 'import os' > startup.py; `
+    echo 'import json' >> startup.py; `
+    echo 'import tempfile' >> startup.py; `
+    echo 'import subprocess' >> startup.py; `
+    echo 'import sys' >> startup.py; `
+    echo '' >> startup.py; `
+    echo 'def setup_credentials():' >> startup.py; `
+    echo '    """Setup Google credentials from environment variable"""' >> startup.py; `
+    echo '    creds_json = os.environ.get("GOOGLE_CREDENTIALS_JSON")' >> startup.py; `
+    echo '    if creds_json:' >> startup.py; `
+    echo '        # Create temporary credentials file' >> startup.py; `
+    echo '        temp_dir = tempfile.gettempdir()' >> startup.py; `
+    echo '        creds_path = os.path.join(temp_dir, "google_credentials.json")' >> startup.py; `
+    echo '        with open(creds_path, "w") as f:' >> startup.py; `
+    echo '            f.write(creds_json)' >> startup.py; `
+    echo '        os.environ["GOOGLE_CREDENTIALS_PATH"] = creds_path' >> startup.py; `
+    echo '        print(f"Google credentials setup at: {creds_path}")' >> startup.py; `
+    echo '    else:' >> startup.py; `
+    echo '        print("No Google credentials found in environment")' >> startup.py; `
+    echo '' >> startup.py; `
+    echo 'if __name__ == "__main__":' >> startup.py; `
+    echo '    setup_credentials()' >> startup.py; `
+    echo '    # Import and run the main application' >> startup.py; `
+    echo '    import jan_code_app' >> startup.py; `
+    echo '    jan_code_app.main()' >> startup.py
+
+# Enable Remote Desktop Services
+RUN Enable-WindowsOptionalFeature -Online -FeatureName IIS-WebServerRole -All; `
+    Import-Module ServerManager; `
+    Add-WindowsFeature RDS-RD-Server -IncludeAllSubFeature
+
+# Configure Remote Desktop
+RUN Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name 'fDenyTSConnections' -Value 0; `
+    Enable-NetFirewallRule -DisplayGroup 'Remote Desktop'; `
+    Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name 'UserAuthentication' -Value 1
+
+# Create user for RDP access
+RUN net user azureuser P@ssw0rd123! /add; `
+    net localgroup administrators azureuser /add; `
+    net localgroup "Remote Desktop Users" azureuser /add
+
+# Set environment variables
+ENV PYTHONPATH=C:\app
+ENV GOOGLE_CREDENTIALS_PATH=""
+ENV SPREADSHEET_KEY="17Le1KA9nzMREt0Qp9_elM1OF1q8aSp-GDBZRPOntNI8"
+
+# Expose RDP port
+EXPOSE 3389
+
+# Create startup batch file
+RUN echo '@echo off' > start.bat; `
+    echo 'echo Starting Remote Desktop Services...' >> start.bat; `
+    echo 'net start TermService' >> start.bat; `
+    echo 'echo Starting JANコード管理アプリ...' >> start.bat; `
+    echo 'cd C:\app' >> start.bat; `
+    echo 'python startup.py' >> start.bat; `
+    echo 'pause' >> start.bat
+
+# Start RDP service and keep container running
+CMD ["cmd", "/c", "net start TermService && python startup.py && timeout /t -1"]

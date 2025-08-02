@@ -50,7 +50,38 @@ python app.py
 
 ブラウザで `http://localhost:5000` にアクセスしてください。
 
-### Azure App Serviceへのデプロイ
+## デプロイ方法
+
+### Azure Container Instances (Windows Container) - デスクトップアプリ版
+
+元のCustomTkinterデスクトップアプリケーションをWindowsコンテナでデプロイ:
+
+#### 前提条件
+- Azure CLI がインストールされていること
+- Azure サブスクリプションへのアクセス権限
+- Google Sheets JSON認証情報ファイル
+
+#### デプロイ手順
+
+**PowerShell スクリプトを使用 (推奨):**
+```powershell
+.\deploy-to-azure.ps1 -ResourceGroupName "pysample-rg" -ContainerGroupName "pysample-desktop" -GoogleCredentialsJsonPath "samplep20240906-5ae36c9a4acd.json"
+```
+
+**Bash スクリプトを使用:**
+```bash
+./deploy-to-azure.sh -g "pysample-rg" -n "pysample-desktop" -c "samplep20240906-5ae36c9a4acd.json"
+```
+
+#### リモートデスクトップ接続
+デプロイ完了後、以下の情報でリモートデスクトップ接続:
+- **サーバー**: `<パブリックIP>:3389`
+- **ユーザー名**: `azureuser`
+- **パスワード**: `P@ssw0rd123!`
+
+詳細な手順は `WINDOWS_CONTAINER_DEPLOYMENT.md` を参照してください。
+
+### Azure App Service (Web版)
 
 1. **Azure App Serviceの作成**
    - Azure Portalで新しいApp Serviceを作成
@@ -146,17 +177,22 @@ docker run -p 5000:5000 -e GOOGLE_CREDENTIALS_JSON='{"type":"service_account",..
 
 ```
 pysample_01a/
-├── jan_code_app.py          # デスクトップ版メインアプリ
-├── app.py                   # Web版Flaskアプリ
-├── requirements.txt         # Python依存関係
-├── Dockerfile              # Docker設定
-├── startup.sh              # Azure起動スクリプト
-├── web.config              # Azure App Service設定
+├── jan_code_app.py                    # デスクトップ版メインアプリ
+├── app.py                             # Web版Flaskアプリ
+├── requirements.txt                   # Python依存関係
+├── Dockerfile                         # Linux Docker設定 (Web版)
+├── Dockerfile.windows                 # Windows Docker設定 (デスクトップ版)
+├── azure-container-deployment.json    # Azure Container Instances ARM テンプレート
+├── deploy-to-azure.ps1               # PowerShell デプロイスクリプト
+├── deploy-to-azure.sh                # Bash デプロイスクリプト
+├── WINDOWS_CONTAINER_DEPLOYMENT.md   # Windows コンテナデプロイガイド
+├── startup.sh                        # Azure起動スクリプト
+├── web.config                        # Azure App Service設定
 ├── templates/
-│   └── index.html          # Web版HTMLテンプレート
+│   └── index.html                    # Web版HTMLテンプレート
 └── static/
-    ├── css/style.css       # Web版スタイルシート
-    └── js/app.js           # Web版JavaScript
+    ├── css/style.css                 # Web版スタイルシート
+    └── js/app.js                     # Web版JavaScript
 ```
 
 ## 技術仕様

@@ -10,56 +10,99 @@
     <div class="container">
         <header>
             <h1>JANコード管理アプリ</h1>
-            <p>Web版 - JANコードの管理とテキスト抽出</p>
+            <p>Web版 - 元のデスクトップアプリと同じ機能</p>
         </header>
 
-        <main>
-            <!-- JANコードコピーセクション -->
-            <section class="section">
-                <h2>JANコードコピー</h2>
+        <!-- メイン機能ボタングリッド -->
+        <main class="main-grid">
+            <!-- 1行目 -->
+            <button class="btn btn-green" onclick="showFunction('重複チェック')">重複と項目抜けのチェック</button>
+            <button class="btn btn-red" onclick="showJanCodeDialog()">JANコード等のコピー</button>
+            <button class="btn btn-red" onclick="showFunction('input.txt開く')">input.txtを開く</button>
+
+            <!-- 2行目 -->
+            <button class="btn btn-red" onclick="showFunction('座標軸コピー')">座標軸コピー</button>
+            <button class="btn btn-green" onclick="showFunction('テキスト貼り付け')">テキストに貼り付けと実行</button>
+            <button class="btn btn-red" onclick="showFunction('データ対応チェック')">データ対応のチェック</button>
+
+            <!-- 3行目 -->
+            <button class="btn btn-blue" onclick="showFunction('チェックシート開く')">チェックシートを開く</button>
+            <button class="btn btn-blue" onclick="showFunction('商品情報入力シート')">商品情報入力シートを開く</button>
+            <button class="btn btn-blue" onclick="showFunction('緑原産業開く')">緑原産業を開く</button>
+
+            <!-- 4行目 -->
+            <button class="btn btn-blue" onclick="showFunction('inputやりチェック')">inputをやりチェック</button>
+            <button class="btn btn-blue" onclick="showFunction('サブフォーム廃番処理')">サブフォーム廃番処理</button>
+            <button class="btn btn-blue" onclick="showFunction('Type2.bat実行')">Type2.bat実行してoutput.txtを表示</button>
+
+            <!-- 5行目 -->
+            <button class="btn btn-blue" onclick="showFunction('クリップボードクリア')">クリップボードのクリア</button>
+            <button class="btn btn-blue" onclick="showFunction('checkd01.txt開く')">checkd01.txtを開く</button>
+            <button class="btn btn-blue" onclick="showFunction('checkd02.txt開く')">checkd02.txtを開く</button>
+        </main>
+
+        <!-- 重要な注意事項 -->
+        <div class="important-notes">
+            <p class="note-red">※商品情報入力シートに必ず名前を明示すること</p>
+            <p class="note-red">※チェックシートの内容をcheckd01.txtにコピーする</p>
+        </div>
+
+        <!-- JANコードダイアログ -->
+        <div id="janCodeDialog" class="dialog" style="display: none;">
+            <div class="dialog-content">
+                <h3>JANコードコピー</h3>
                 <div class="form-group">
                     <label for="indexInput">指定した番目:</label>
                     <input type="number" id="indexInput" min="1" value="1">
-                    <button onclick="copyJanCode()">JANコードを取得</button>
                 </div>
-                <div class="button-group">
-                    <button onclick="nextJanCode()">次へ進む</button>
-                    <button onclick="previousJanCode()">一つ戻る</button>
+                <div class="dialog-buttons">
+                    <button class="btn btn-blue" onclick="copyJanCode()">JANコードをコピー</button>
+                    <button class="btn btn-blue" onclick="nextJanCode()">次へ進む</button>
+                    <button class="btn btn-blue" onclick="previousJanCode()">一つ戻る</button>
                 </div>
                 <div id="janResult" class="result"></div>
-            </section>
+                <div class="dialog-buttons">
+                    <button class="btn btn-gray" onclick="closeDialog('janCodeDialog')">閉じる</button>
+                </div>
+            </div>
+        </div>
 
-            <!-- テキスト抽出セクション -->
-            <section class="section">
-                <h2>テキスト抽出</h2>
+        <!-- JANコード入力ダイアログ -->
+        <div id="janInputDialog" class="dialog" style="display: none;">
+            <div class="dialog-content">
+                <h3>JANコードを入力してください</h3>
+                <div class="form-group">
+                    <input type="text" id="janCodeInput" placeholder="JANコードを入力">
+                </div>
+                <div class="dialog-buttons">
+                    <button class="btn btn-blue" onclick="addJanCode()">追加</button>
+                    <button class="btn btn-gray" onclick="closeDialog('janInputDialog')">閉じる</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- テキスト抽出ダイアログ -->
+        <div id="textExtractDialog" class="dialog" style="display: none;">
+            <div class="dialog-content">
+                <h3>テキスト抽出</h3>
                 <div class="form-group">
                     <label for="textInput">抽出したいテキストを入力:</label>
                     <textarea id="textInput" rows="6" placeholder="JANコードと重量情報を含むテキストを入力してください..."></textarea>
-                    <button onclick="extractText()">JANコード～重量抽出</button>
+                </div>
+                <div class="dialog-buttons">
+                    <button class="btn btn-blue" onclick="extractText()">JANコード～重量抽出</button>
+                    <button class="btn btn-gray" onclick="closeDialog('textExtractDialog')">閉じる</button>
                 </div>
                 <div id="extractResult" class="result"></div>
-            </section>
+            </div>
+        </div>
 
-            <!-- 使用方法 -->
-            <section class="section">
-                <h2>使用方法</h2>
-                <div class="instructions">
-                    <h3>JANコード機能</h3>
-                    <ul>
-                        <li>番目を指定してJANコードを取得</li>
-                        <li>次へ進む/一つ戻るボタンで連続操作</li>
-                        <li>Google Sheets未接続時はデモモードで動作</li>
-                    </ul>
-                    
-                    <h3>テキスト抽出機能</h3>
-                    <ul>
-                        <li>JANコードと重量情報を含むテキストを入力</li>
-                        <li>対応する重量形式: 123g, 123G, 123グラム, 重量：123g, 123ｇ</li>
-                        <li>13桁または8桁のJANコードを自動検出</li>
-                    </ul>
-                </div>
-            </section>
-        </main>
+        <!-- 機能実行結果表示エリア -->
+        <div id="functionResult" class="result-area" style="display: none;">
+            <h3 id="functionTitle"></h3>
+            <div id="functionContent"></div>
+            <button class="btn btn-gray" onclick="closeFunctionResult()">閉じる</button>
+        </div>
     </div>
 
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
